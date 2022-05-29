@@ -96,6 +96,13 @@ async def connect(message):
     print(readChannelID)
     await message.channel.send('connected')
 
+def read_name(message):
+    if message.author.nick is None:
+        return message.author.name
+    else:
+        return message.author.nick
+
+
 @bot.event
 async def on_message(message):
     global readChannelID
@@ -109,7 +116,10 @@ async def on_message(message):
         await disconnect(message)
         return
     if message.channel.id == readChannelID:
-        play_voice(message.content)
+        name = read_name(message)
+        content = message.content
+        voice_msg = f"{name} {content}"
+        play_voice(voice_msg)
 
 @bot.event
 async def on_ready():
