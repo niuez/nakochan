@@ -11,11 +11,12 @@ import threading, queue
 import pathlib
 from threading import Event
 import os
+from typing import Optional, Union
 
 TOKEN = os.environ['VOICEVOX_TOKEN']
 
-voiceChannel: VoiceChannel 
-
+voiceChannel = None #: Optional[VoiceChannel]
+readChannelID = 0
 base_url = "http://127.0.0.1:50031"
 headers = {
     'Content-Type': 'application/json',
@@ -75,24 +76,40 @@ def play_voice(text):
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=">", intents=intents)
 
+# disconnect if bot has already connected to vc.
+async def disconnect(message):
+    global voiceChannel
+    global readChannelID
+    if voiceChannel != 0:
+        await message.channel.send('disconnected')
+        await voiceChannel.disconnect()
+        voiceChannel = None
+        readChannelID = 0
+
+# connect to vc. if bot has already connected to vc, bot disconnect from it.
+async def connect(message):
+    global voiceChannel
+    global readChannelID
+    disconnect(message)
+    readChannelID = message.channel.id
+    voiceChannel = await VoiceChannel.connect(message.author.voice.channel)
+    print(readChannelID)
+    await message.channel.send('connected')
+
 @bot.event
 async def on_message(message):
-    print("on_message", message.content)
-    global voiceChannel
+    global readChannelID
 
     if message.author.bot:
         return
     if message.content == '!vcon':
-        voiceChannel = await VoiceChannel.connect(message.author.voice.channel)
-        await message.channel.send('connected')
+        await connect(message)
         return
     elif message.content == '!vdc':
-        voiceChannel.stop()
-        await message.channel.send('disconnected')
-        await voiceChannel.disconnect()
+        await disconnect(message)
         return
-
-    play_voice(message.content)
+    if message.channel.id == readChannelID:
+        play_voice(message.content)
 
 @bot.event
 async def on_ready():
