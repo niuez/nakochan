@@ -206,16 +206,21 @@ async def check_sleep():
         return
     dt_now = datetime.datetime.now()
     print(dt_now)
-    if dt_now.minute == 59:
+    if dt_now.minute == 59 or dt_now.minute == 30:
         hour = (dt_now.hour + 1) % 24
         print(hour, "check")
         for member in voiceChannel.channel.members:
             decl_hour = get_sleep_decl(member.nick)
             print(decl_hour, member.name)
             print(decl_hour == hour)
-            if decl_hour == hour:
+            # encourge
+            if decl_hour == (dt_now.hour + 1) % 24 and dt_now.minute == 59:
                 name = member.name
                 voice_msg = f"{name}さん ねないの"
+                play_voice(voice_msg)
+            if decl_hour == dt_now.hour and dt_now.minute == 30:
+                name = member.name
+                voice_msg = f"{name}さん ねてないじゃん！ ねようね"
                 play_voice(voice_msg)
 
 
