@@ -81,7 +81,7 @@ async def disconnect(message):
     global voiceChannel
     global readChannelID
     if voiceChannel != 0:
-        await message.channel.send('disconnected')
+        await message.channel.send('おやすみ～')
         await voiceChannel.disconnect()
         voiceChannel = None
         readChannelID = 0
@@ -94,7 +94,7 @@ async def connect(message):
     readChannelID = message.channel.id
     voiceChannel = await VoiceChannel.connect(message.author.voice.channel)
     print(readChannelID)
-    await message.channel.send('connected')
+    await message.channel.send('おはよ！')
 
 def read_name(message):
     if message.author.nick is None:
