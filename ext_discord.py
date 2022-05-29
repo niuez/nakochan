@@ -106,6 +106,13 @@ def read_name(member):
     else:
         return member.nick
 
+@bot.command()
+async def con(ctx):
+    await connect(ctx.message)
+
+@bot.command()
+async def dc(ctx):
+    await disconnect(ctx.message)
 
 @bot.event
 async def on_message(message):
@@ -113,12 +120,8 @@ async def on_message(message):
 
     if message.author.bot:
         return
-    if message.content == '!vcon':
-        await connect(message)
-        return
-    elif message.content == '!vdc':
-        await disconnect(message)
-        return
+    await bot.process_commands(message)
+
     if is_connected() and message.channel.id == readChannelID:
         name = read_name(message.author)
         content = message.content
