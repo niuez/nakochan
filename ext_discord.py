@@ -175,12 +175,12 @@ async def on_voice_state_update(member, before, after):
         if before.channel is None and is_connected_channel(after.channel):
             # connecting
             name = read_name(member)
-            voice_msg = f"{name}が入室しました"
+            voice_msg = f"{name} こんにちは"
             play_voice(voice_msg)
         if after.channel is None and is_connected_channel(before.channel):
             # disconnecting
             name = read_name(member)
-            voice_msg = f"{name}が退出しました"
+            voice_msg = f"{name} またねー"
             play_voice(voice_msg)
         
 
