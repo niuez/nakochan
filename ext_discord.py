@@ -96,11 +96,15 @@ async def connect(message):
     print(readChannelID)
     await message.channel.send('おはよ！')
 
-def read_name(message):
-    if message.author.nick is None:
-        return message.author.name
+def is_connected():
+    global voiceChannel
+    return voiceChannel is not None
+
+def read_name(member):
+    if member.nick is None:
+        return member.name
     else:
-        return message.author.nick
+        return member.nick
 
 
 @bot.event
@@ -115,11 +119,37 @@ async def on_message(message):
     elif message.content == '!vdc':
         await disconnect(message)
         return
-    if message.channel.id == readChannelID:
-        name = read_name(message)
+    if is_connected() and message.channel.id == readChannelID:
+        name = read_name(message.author)
         content = message.content
         voice_msg = f"{name} {content}"
         play_voice(voice_msg)
+
+def is_connected_channel(channel):
+    global voiceChannel
+    if channel is None:
+        return False
+    elif channel.id == voiceChannel.channel.id:
+        return True
+    else:
+        return False
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if not is_connected():
+        return
+    if is_connected_channel(before.channel) or is_connected_channel(after.channel):
+        if before.channel is None and is_connected_channel(after.channel):
+            # connecting
+            name = read_name(member)
+            voice_msg = f"{name}が入室しました"
+            play_voice(voice_msg)
+        if after.channel is None and is_connected_channel(before.channel):
+            # disconnecting
+            name = read_name(member)
+            voice_msg = f"{name}が退出しました"
+            play_voice(voice_msg)
+        
 
 @bot.event
 async def on_ready():
