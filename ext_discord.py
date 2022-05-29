@@ -22,6 +22,23 @@ headers = {
     'Content-Type': 'application/json',
 }
 
+dict_file = open("read_dict", "r", encoding='utf-8')
+dict_file_str = dict_file.read()
+print(dict_file_str)
+read_dict = json.loads(dict_file_str)
+dict_file.close()
+
+def save_dict():
+    global read_dict
+    dict_file = open("read_dict", 'w', encoding='utf-8')
+    dict_file.write(json.dumps(read_dict, ensure_ascii=False, indent=2))
+    dict_file.close()
+
+def replace_by_dict(text):
+    for word, read in read_dict.items():
+        text = text.replace(word, read)
+    return text
+
 que = queue.Queue()
 
 def play_voice_worker():
@@ -114,6 +131,19 @@ async def con(ctx):
 async def dc(ctx):
     await disconnect(ctx.message)
 
+
+@bot.command()
+async def add(ctx, before, after):
+    global read_dict
+    read_dict[before] = after
+    save_dict()
+
+@bot.command()
+async def rem(ctx, before):
+    global read_dict
+    read_dict.pop(before)
+    save_dict()
+
 @bot.event
 async def on_message(message):
     global readChannelID
@@ -126,7 +156,7 @@ async def on_message(message):
         name = read_name(message.author)
         content = message.content
         voice_msg = f"{name} {content}"
-        play_voice(voice_msg)
+        play_voice(replace_by_dict(voice_msg))
 
 def is_connected_channel(channel):
     global voiceChannel
