@@ -97,11 +97,13 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=">", intents=intents)
 
 # disconnect if bot has already connected to vc.
-async def disconnect(message):
+async def disconnect():
     global voiceChannel
     global readChannelID
-    if voiceChannel != 0:
-        await message.channel.send('おやすみ～')
+    print("disconnect", readChannelID)
+    if readChannelID != 0:
+        channel = bot.get_channel(readChannelID)
+        await channel.send('おやすみ～')
         await voiceChannel.disconnect()
         voiceChannel = None
         readChannelID = 0
@@ -110,7 +112,7 @@ async def disconnect(message):
 async def connect(message):
     global voiceChannel
     global readChannelID
-    disconnect(message)
+    await disconnect()
     readChannelID = message.channel.id
     voiceChannel = await VoiceChannel.connect(message.author.voice.channel)
     print(readChannelID)
@@ -132,7 +134,7 @@ async def con(ctx):
 
 @bot.command()
 async def dc(ctx):
-    await disconnect(ctx.message)
+    await disconnect()
 
 
 @bot.command()
@@ -172,22 +174,25 @@ def is_connected_channel(channel):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    if not is_connected():
-        return
-    if is_connected_channel(before.channel) or is_connected_channel(after.channel):
-        if before.channel is None and is_connected_channel(after.channel):
-            # connecting
-            name = read_name(member)
-            voice_msg = f"{name} こんにちは"
-            play_voice(voice_msg)
-        if after.channel is None and is_connected_channel(before.channel):
-            # disconnecting
-            name = read_name(member)
-            voice_msg = f"{name} またねー"
-            play_voice(voice_msg)
-
+    if is_connected() and after.channel is None and is_connected_channel(before.channel):
+        # check number of member
+        print(len(before.channel.members))
+        if len(before.channel.members) == 1:
+            # disconnect from connected channel
+            await disconnect()
+        
+    if is_connected() and before.channel is None and is_connected_channel(after.channel):
+        # connecting
+        name = read_name(member)
+        voice_msg = f"{name} こんにちは"
+        play_voice(voice_msg)
+    if is_connected() and after.channel is None and is_connected_channel(before.channel):
+        # disconnecting
+        name = read_name(member)
+        voice_msg = f"{name} またねー"
+        play_voice(voice_msg)
+        
 sleep_decl_pattern = re.compile(r"(\d+)時に")
-
 
 def get_sleep_decl(nick):
     if nick is not None:
@@ -222,8 +227,6 @@ async def check_sleep():
                 name = member.name
                 voice_msg = f"{name}さん ねてないじゃん！ ねようね"
                 play_voice(voice_msg)
-
-
 
 @bot.event
 async def on_ready():
