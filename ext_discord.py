@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import tasks, commands
 from discord.channel import VoiceChannel
 from discord.player import FFmpegPCMAudio
 import urllib.request
@@ -12,6 +12,8 @@ import pathlib
 from threading import Event
 import os
 from typing import Optional, Union
+import datetime
+import re
 
 TOKEN = os.environ['VOICEVOX_TOKEN']
 
@@ -83,6 +85,7 @@ def create_voice(text, temp_file):
             temp_file.write(res.read())
 
 def play_voice(text):
+    text = replace_by_dict(text)
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', dir='.', delete=False)
     #temp_file = open("shikkoku.wav", "wb")
     print("tempfile: ", temp_file.name)
@@ -158,7 +161,7 @@ async def on_message(message):
         name = read_name(message.author)
         content = message.content
         voice_msg = f"{name} {content}"
-        play_voice(replace_by_dict(voice_msg))
+        play_voice(voice_msg)
 
 def is_connected_channel(channel):
     global voiceChannel
@@ -189,9 +192,45 @@ async def on_voice_state_update(member, before, after):
         voice_msg = f"{name} またねー"
         play_voice(voice_msg)
         
+sleep_decl_pattern = re.compile(r"(\d+)時に")
+
+def get_sleep_decl(nick):
+    if nick is not None:
+        m = sleep_decl_pattern.match(nick)
+        if m is not None:
+            return int(m.group(1))
+        else:
+            None
+    else:
+        return None
+
+@tasks.loop(seconds=60)
+async def check_sleep():
+    global voiceChannel
+    if not is_connected():
+        return
+    dt_now = datetime.datetime.now()
+    print(dt_now)
+    if dt_now.minute == 59 or dt_now.minute == 30:
+        hour = (dt_now.hour + 1) % 24
+        print(hour, "check")
+        for member in voiceChannel.channel.members:
+            decl_hour = get_sleep_decl(member.nick)
+            print(decl_hour, member.name)
+            print(decl_hour == hour)
+            # encourge
+            if decl_hour == (dt_now.hour + 1) % 24 and dt_now.minute == 59:
+                name = member.name
+                voice_msg = f"{name}さん ねないの"
+                play_voice(voice_msg)
+            if decl_hour == dt_now.hour and dt_now.minute == 30:
+                name = member.name
+                voice_msg = f"{name}さん ねてないじゃん！ ねようね"
+                play_voice(voice_msg)
 
 @bot.event
 async def on_ready():
     print('on_ready')
 
+check_sleep.start()
 bot.run(TOKEN)
