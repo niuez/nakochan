@@ -97,7 +97,8 @@ bot = commands.Bot(command_prefix=">", intents=intents)
 async def disconnect(message):
     global voiceChannel
     global readChannelID
-    if voiceChannel != 0:
+    print("disconnect", readChannelID)
+    if readChannelID != 0:
         await message.channel.send('おやすみ～')
         await voiceChannel.disconnect()
         voiceChannel = None
@@ -107,7 +108,7 @@ async def disconnect(message):
 async def connect(message):
     global voiceChannel
     global readChannelID
-    disconnect(message)
+    await disconnect(message)
     readChannelID = message.channel.id
     voiceChannel = await VoiceChannel.connect(message.author.voice.channel)
     print(readChannelID)
