@@ -41,6 +41,16 @@ def replace_by_dict(text):
         text = text.replace(word, read)
     return text
 
+url_regex = re.compile(r"https?://[\w!?/+\-_~;.,*&@#$%()'[\]]+")
+
+def replace_url(text):
+    return url_regex.sub("url", text)
+
+def make_read_text(text):
+    text = replace_by_dict(text)
+    text = replace_url(text)
+    return text
+
 que = queue.Queue()
 
 def play_voice_worker():
@@ -85,7 +95,7 @@ def create_voice(text, temp_file):
             temp_file.write(res.read())
 
 def play_voice(text):
-    text = replace_by_dict(text)
+    text = make_read_text(text)
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', dir='.', delete=False)
     #temp_file = open("shikkoku.wav", "wb")
     print("tempfile: ", temp_file.name)
