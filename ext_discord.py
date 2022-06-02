@@ -208,7 +208,10 @@ def get_sleep_decl(nick):
     if nick is not None:
         m = sleep_decl_pattern.match(nick)
         if m is not None:
-            return int(m.group(1))
+            h = int(m.group(1))
+            if h == 12:
+                h = 0
+            return h
         else:
             None
     else:
