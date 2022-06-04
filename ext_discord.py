@@ -41,7 +41,7 @@ def replace_by_dict(text):
         text = text.replace(word, read)
     return text
 
-url_regex = re.compile(r"https?://[\w!?/+\-_~;.,*&@#$%()'[\]]+")
+url_regex = re.compile(r"https?://[\w!?/+\-_~;.,*&@#$%()='[\]]+")
 
 def replace_url(text):
     return url_regex.sub("url", text)
