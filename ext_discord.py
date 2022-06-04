@@ -103,7 +103,6 @@ def create_voice(text, temp_file):
 
 def play_voice(text):
     text = make_read_text(text)
-    print(text)
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', dir='.', delete=False)
     #temp_file = open("shikkoku.wav", "wb")
     print("tempfile: ", temp_file.name)
