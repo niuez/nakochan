@@ -14,6 +14,7 @@ import os
 from typing import Optional, Union
 import datetime
 import re
+from bs4 import BeautifulSoup
 
 TOKEN = os.environ['VOICEVOX_TOKEN']
 
@@ -23,6 +24,7 @@ base_url = "http://127.0.0.1:50031"
 headers = {
     'Content-Type': 'application/json',
 }
+
 
 dict_file = open("read_dict", "r", encoding='utf-8')
 dict_file_str = dict_file.read()
@@ -102,7 +104,6 @@ def create_voice(text, temp_file):
             temp_file.write(res.read())
 
 def play_voice(text):
-    text = make_read_text(text)
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', dir='.', delete=False)
     #temp_file = open("shikkoku.wav", "wb")
     print("tempfile: ", temp_file.name)
@@ -177,8 +178,10 @@ async def on_message(message):
     if is_connected() and message.channel.id == readChannelID:
         name = read_name(message.author)
         content = message.content
-        voice_msg = f"{name} {content}"
-        play_voice(voice_msg)
+        content = make_read_text(content)
+        if content != '':
+            voice_msg = f"{name} {content}"
+            play_voice(voice_msg)
 
 def is_connected_channel(channel):
     global voiceChannel
