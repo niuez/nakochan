@@ -46,10 +46,17 @@ url_regex = re.compile(r"https?://[\w!?/+\-_~;.,*&@#$%()='[\]]+")
 def replace_url(text):
     return url_regex.sub("url", text)
 
+def remove_spoiler_text(text):
+    text = re.sub('\|\|.+?\|\|','',text)
+    return text
+
 def make_read_text(text):
     text = replace_by_dict(text)
     text = replace_url(text)
+    text = remove_spoiler_text(text)
     return text
+
+
 
 que = queue.Queue()
 
@@ -96,6 +103,7 @@ def create_voice(text, temp_file):
 
 def play_voice(text):
     text = make_read_text(text)
+    print(text)
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', dir='.', delete=False)
     #temp_file = open("shikkoku.wav", "wb")
     print("tempfile: ", temp_file.name)
