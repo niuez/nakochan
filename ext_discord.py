@@ -14,7 +14,6 @@ import os
 from typing import Optional, Union
 import datetime
 import re
-from bs4 import BeautifulSoup
 
 TOKEN = os.environ['VOICEVOX_TOKEN']
 
@@ -48,7 +47,7 @@ url_regex = re.compile(r"https?://[\w!?/+\-_~;.,*&@#$%()='[\]]+")
 def replace_url(text):
     return url_regex.sub("url", text)
 
-def remove_spoiler_text(text):
+def remove_spoiler(text):
     text = re.sub('\|\|.+?\|\|','',text)
     return text
 
@@ -59,7 +58,7 @@ def remove_custom_emoji(text):
 def make_read_text(text):
     text = replace_by_dict(text)
     text = replace_url(text)
-    text = remove_spoiler_text(text)
+    text = remove_spoiler(text)
     text = remove_custom_emoji(text)
     return text
 
