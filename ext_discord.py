@@ -52,10 +52,15 @@ def remove_spoiler_text(text):
     text = re.sub('\|\|.+?\|\|','',text)
     return text
 
+def remove_custom_emoji(text):
+    text = re.sub('<:.+?:.+?>','',text)
+    return text
+
 def make_read_text(text):
     text = replace_by_dict(text)
     text = replace_url(text)
     text = remove_spoiler_text(text)
+    text = remove_custom_emoji(text)
     return text
 
 
@@ -178,6 +183,7 @@ async def on_message(message):
     if is_connected() and message.channel.id == readChannelID:
         name = read_name(message.author)
         content = message.content
+        print(content)
         content = make_read_text(content)
         if content != '':
             voice_msg = f"{name} {content}"
