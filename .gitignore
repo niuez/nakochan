@@ -2,3 +2,4 @@ voicevox_discord.py
 token
 *.wav
 read_dict
+greeting
