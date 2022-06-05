@@ -26,10 +26,18 @@ headers = {
 
 
 dict_file = open("read_dict", "r", encoding='utf-8')
+greeting_file = open("greeting","r",encoding='utf-8')
 dict_file_str = dict_file.read()
 print(dict_file_str)
+greeting_file_str = greeting_file.read()
+print(greeting_file_str)
+
 read_dict = json.loads(dict_file_str)
+#あいさつ用の dict 
+#user_id -> {'hello':x,'bye':y}
+greeting_dict = json.loads(greeting_file_str)
 dict_file.close()
+greeting_file.close()
 
 def save_dict():
     global read_dict
@@ -37,10 +45,18 @@ def save_dict():
     dict_file.write(json.dumps(read_dict, ensure_ascii=False, indent=2))
     dict_file.close()
 
+def save_greeting():
+    global greeting_dict
+    greeting_file = open("greeting","w",encoding='utf-8')
+    greeting_file.write(json.dumps(greeting_dict,ensure_ascii=False,indent=2))
+    greeting_file.close()
+
 def replace_by_dict(text):
     for word, read in read_dict.items():
         text = text.replace(word, read)
     return text
+
+
 
 url_regex = re.compile(r"https?://[\w!?/+\-_~;.,*&@#$%()='[\]]+")
 
@@ -55,11 +71,16 @@ def remove_custom_emoji(text):
     text = re.sub('<:.+?:.+?>','',text)
     return text
 
+def remove_reply_id(text):
+    text = re.sub('<@.+?>','',text)
+    return text
+
 def make_read_text(text):
     text = replace_by_dict(text)
     text = replace_url(text)
     text = remove_spoiler(text)
     text = remove_custom_emoji(text)
+    text = remove_reply_id(text)
     return text
 
 
@@ -108,6 +129,8 @@ def create_voice(text, temp_file):
             temp_file.write(res.read())
 
 def play_voice(text):
+    if len(text) >= 30:
+        text = '長すぎるよ！'
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', dir='.', delete=False)
     #temp_file = open("shikkoku.wav", "wb")
     print("tempfile: ", temp_file.name)
@@ -171,6 +194,22 @@ async def rem(ctx, before):
     read_dict.pop(before)
     save_dict()
 
+@bot.command()
+async def hel(ctx,after):
+    global greeting_dict
+    author_id = ctx.author.id
+    prev_dict = greeting_dict.get(author_id)
+    greeting_dict[author_id] = {'hello':after,'bye':None if prev_dict == None else prev_dict['bye']}
+    save_greeting()
+
+@bot.command()
+async def bye(ctx,after):
+    global greeting_dict
+    author_id = ctx.author.id
+    prev_dict = greeting_dict.get(author_id)
+    greeting_dict[author_id] = {'hello':None if prev_dict == None else prev_dict['hello'],'bye':after}
+    save_greeting()
+
 @bot.event
 async def on_message(message):
     global readChannelID
@@ -181,6 +220,7 @@ async def on_message(message):
 
     if is_connected() and message.channel.id == readChannelID:
         name = read_name(message.author)
+        
         content = message.content
         print(content)
         content = make_read_text(content)
@@ -209,12 +249,14 @@ async def on_voice_state_update(member, before, after):
     if is_connected() and before.channel is None and is_connected_channel(after.channel):
         # connecting
         name = read_name(member)
-        voice_msg = f"{name} こんにちは"
+        hello = greeting_dict.get(member.id,dict()).get('hello','こんにちは')
+        voice_msg = f"{name} {hello}"
         play_voice(voice_msg)
     if is_connected() and after.channel is None and is_connected_channel(before.channel):
         # disconnecting
         name = read_name(member)
-        voice_msg = f"{name} またねー"
+        bye = greeting_dict.get(member.id,dict()).get('bye','またねー')
+        voice_msg = f"{name} {bye}"
         play_voice(voice_msg)
         
 sleep_decl_pattern = re.compile(r"(\d+)時に")
