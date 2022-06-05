@@ -198,7 +198,7 @@ async def rem(ctx, before):
 @bot.command()
 async def hel(ctx,after):
     global greeting_dict
-    user_id = ctx.author.id
+    user_id = str(ctx.author.id)
     if user_id not in greeting_dict:
         greeting_dict[user_id] = dict()
     greeting_dict[user_id]['hello'] = after
@@ -207,7 +207,7 @@ async def hel(ctx,after):
 @bot.command()
 async def bye(ctx,after):
     global greeting_dict
-    user_id = ctx.author.id
+    user_id = str(ctx.author.id)
     if user_id not in greeting_dict:
         greeting_dict[user_id] = dict()
     greeting_dict[user_id]['bye'] = after
@@ -250,13 +250,13 @@ async def on_voice_state_update(member, before, after):
     if is_connected() and before.channel is None and is_connected_channel(after.channel):
         # connecting
         name = read_name(member)
-        hello = greeting_dict.get(member.id,dict()).get('hello','こんにちは')
+        hello = greeting_dict.get(str(member.id),dict()).get('hello','こんにちは')
         voice_msg = f"{name} {hello}"
         play_voice(voice_msg)
     if is_connected() and after.channel is None and is_connected_channel(before.channel):
         # disconnecting
         name = read_name(member)
-        bye = greeting_dict.get(member.id,dict()).get('bye','またねー')
+        bye = greeting_dict.get(str(member.id),dict()).get('bye','またねー')
         voice_msg = f"{name} {bye}"
         play_voice(voice_msg)
         
