@@ -129,7 +129,7 @@ def create_voice(text, temp_file):
             temp_file.write(res.read())
 
 def play_voice(text):
-    if len(text) >= 30:
+    if len(text) >= 100:
         text = '長すぎるよ！'
     temp_file = tempfile.NamedTemporaryFile(suffix='.wav', dir='.', delete=False)
     #temp_file = open("shikkoku.wav", "wb")
@@ -244,8 +244,7 @@ async def on_voice_state_update(member, before, after):
         print(len(before.channel.members))
         if len(before.channel.members) == 1:
             # disconnect from connected channel
-            await disconnect()
-        
+            await disconnect()    
     if is_connected() and before.channel is None and is_connected_channel(after.channel):
         # connecting
         name = read_name(member)
