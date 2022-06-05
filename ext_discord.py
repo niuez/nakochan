@@ -80,7 +80,7 @@ def make_read_text(text):
     text = replace_url(text)
     text = remove_spoiler(text)
     text = remove_custom_emoji(text)
-    text = remove_reply_id(text)
+    #text = remove_reply_id(text)
     return text
 
 
@@ -194,20 +194,21 @@ async def rem(ctx, before):
     read_dict.pop(before)
     save_dict()
 
+# >hel @user hello 
 @bot.command()
 async def hel(ctx,user: discord.User,after):
     global greeting_dict
     user_id = user.id
-    prev_dict = greeting_dict.get(user_id)
-    greeting_dict[user_id] = {'hello':after,'bye':None if prev_dict == None else prev_dict['bye']}
+    prev_dict = greeting_dict.get(user_id,dict())
+    greeting_dict[user_id] = {'hello':after,'bye':prev_dict.get('bye')}
     save_greeting()
 
 @bot.command()
 async def bye(ctx,user: discord.User,after):
     global greeting_dict
     user_id = user.id
-    prev_dict = greeting_dict.get(user_id)
-    greeting_dict[user_id] = {'hello':None if prev_dict == None else prev_dict['hello'],'bye':after}
+    prev_dict = greeting_dict.get(user_id,dict())
+    greeting_dict[user_id] = {'hello':prev_dict.get('hello'),'bye':after}
     save_greeting()
 
 @bot.event
@@ -220,8 +221,7 @@ async def on_message(message):
 
     if is_connected() and message.channel.id == readChannelID:
         name = read_name(message.author)
-        
-        content = message.content
+        content = message.clean_content
         print(content)
         content = make_read_text(content)
         if content != '':
