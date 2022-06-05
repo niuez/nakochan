@@ -195,19 +195,19 @@ async def rem(ctx, before):
     save_dict()
 
 @bot.command()
-async def hel(ctx,after):
+async def hel(ctx,user: discord.User,after):
     global greeting_dict
-    author_id = ctx.author.id
-    prev_dict = greeting_dict.get(author_id)
-    greeting_dict[author_id] = {'hello':after,'bye':None if prev_dict == None else prev_dict['bye']}
+    user_id = user.id
+    prev_dict = greeting_dict.get(user_id)
+    greeting_dict[user_id] = {'hello':after,'bye':None if prev_dict == None else prev_dict['bye']}
     save_greeting()
 
 @bot.command()
-async def bye(ctx,after):
+async def bye(ctx,user: discord.User,after):
     global greeting_dict
-    author_id = ctx.author.id
-    prev_dict = greeting_dict.get(author_id)
-    greeting_dict[author_id] = {'hello':None if prev_dict == None else prev_dict['hello'],'bye':after}
+    user_id = user.id
+    prev_dict = greeting_dict.get(user_id)
+    greeting_dict[user_id] = {'hello':None if prev_dict == None else prev_dict['hello'],'bye':after}
     save_greeting()
 
 @bot.event
