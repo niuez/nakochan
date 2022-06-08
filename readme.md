@@ -1,6 +1,8 @@
 ## voicevox(coeiroink)を使った読み上げbot
 
-- 自分のPCでvoicevoxのサーバを建てつつ、`ext_discord.py`を実行して使います
+## 導入方法
+
+[install.md](./install.md)を参照してください。
 
 ## 機能
 
