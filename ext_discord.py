@@ -182,14 +182,16 @@ def is_connected():
     return voiceChannel is not None
 
 def read_name(member):
-    if member.nick is None:
-        return member.name
-    else:
-        return member.nick
+    return member.display_name
+    #if member.nick is None:
+    #    return member.name
+    #else:
+    #    return member.nick
 
 @bot.command()
 async def con(ctx):
     await connect(ctx.message)
+    play_voice("おはようございます")
 
 @bot.command()
 async def dc(ctx):
@@ -201,12 +203,16 @@ async def add(ctx, before, after):
     global read_dict
     read_dict[before] = after
     save_dict()
+    voice_msg = make_read_text(f"{after}、覚えました")
+    play_voice(voice_msg)
 
 @bot.command()
 async def rem(ctx, before):
     global read_dict
     read_dict.pop(before)
     save_dict()
+    voice_msg = make_read_text(f"これからは、{before}って読むね")
+    play_voice(voice_msg)
 
 # >hel @user hello 
 @bot.command()
@@ -217,6 +223,10 @@ async def hel(ctx,after):
         greeting_dict[user_id] = dict()
     greeting_dict[user_id]['hello'] = after
     save_greeting()
+    name = read_name(ctx.author)
+    print(ctx.author)
+    voice_msg = make_read_text(f"{name}さん、次会ったときは、{after}って言うね。")
+    play_voice(voice_msg)
 
 @bot.command()
 async def bye(ctx,after):
@@ -226,14 +236,16 @@ async def bye(ctx,after):
         greeting_dict[user_id] = dict()
     greeting_dict[user_id]['bye'] = after
     save_greeting()
+    name = read_name(ctx.author)
+    voice_msg = make_read_text(f"{name}さん、部屋を出たときは、{after}と伝えるね。")
+    play_voice(voice_msg)
 
-@bot.event
+@bot.listen()
 async def on_message(message):
     global readChannelID
 
-    if message.author.bot:
+    if message.author.bot or message.content[0] == '>':
         return
-    await bot.process_commands(message)
 
     if is_connected() and message.channel.id == readChannelID:
         name = read_name(message.author)
