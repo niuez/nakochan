@@ -14,6 +14,7 @@ import os
 from typing import Optional, Union
 import datetime
 import re
+import alkana
 
 COMMAND_PREFIX = ">"
 TOKEN = os.environ['VOICEVOX_TOKEN']
@@ -76,11 +77,24 @@ def remove_reply_id(text):
     text = re.sub('<@.+?>','',text)
     return text
 
+english_regex = re.compile(r"([a-zA-Z']+)\s*")
+
+def repl_eng_to_kana(matchobj):
+    eng = alkana.get_kana(matchobj.group(1))
+    if eng is None:
+        return matchobj.group(1)
+    else:
+        return eng
+
+def replace_english_to_kana(text):
+    return english_regex.sub(repl_eng_to_kana, text)
+
 def make_read_text(text):
     text = replace_by_dict(text)
     text = replace_url(text)
     text = remove_spoiler(text)
     text = remove_custom_emoji(text)
+    text = replace_english_to_kana(text)
     #text = remove_reply_id(text)
     return text
 
