@@ -67,6 +67,15 @@ cd discord.py
 python3 -m pip install -U .[voice]
 ```
 
+## alkanaのインストール
+
+英語の辞書です
+
+```
+pip install alkana
+```
+
+
 ## ffmpegのダウンロード
 
 音声を再生するためにffmpegが必要です。
