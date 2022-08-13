@@ -15,6 +15,7 @@ from typing import Optional, Union
 import datetime
 import re
 
+COMMAND_PREFIX = ">"
 TOKEN = os.environ['VOICEVOX_TOKEN']
 
 voiceChannel = None #: Optional[VoiceChannel]
@@ -139,7 +140,7 @@ def play_voice(text):
     que.put(temp_file)
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=">", intents=intents)
+bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
 # disconnect if bot has already connected to vc.
 async def disconnect():
