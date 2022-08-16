@@ -245,7 +245,7 @@ async def bye(ctx,after):
 async def on_message(message):
     global readChannelID
 
-    if message.author.bot or message.content[0].startswith(COMMAND_PREFIX):
+    if message.author.bot or message.content.startswith(COMMAND_PREFIX):
         return
 
     if is_connected() and message.channel.id == readChannelID:
