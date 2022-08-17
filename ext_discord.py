@@ -15,12 +15,15 @@ from typing import Optional, Union
 import datetime
 import re
 import alkana
+import asyncio
+import time
 
 COMMAND_PREFIX = ">"
 TOKEN = os.environ['VOICEVOX_TOKEN']
 
 voiceChannel = None #: Optional[VoiceChannel]
 readChannelID = 0
+voiceChannelID = 0
 base_url = "http://127.0.0.1:50031"
 headers = {
     'Content-Type': 'application/json',
@@ -153,182 +156,203 @@ def play_voice(text):
     print("push", temp_file.name)
     que.put(temp_file)
 
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
+while True:
+    loop = asyncio.new_event_loop()
+    intents = discord.Intents.all()
+    bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents, loop=loop)
 
-# disconnect if bot has already connected to vc.
-async def disconnect():
-    global voiceChannel
-    global readChannelID
-    print("disconnect", readChannelID)
-    if readChannelID != 0:
-        channel = bot.get_channel(readChannelID)
-        await channel.send('おやすみ～')
-        await voiceChannel.disconnect()
-        voiceChannel = None
-        readChannelID = 0
+    # disconnect if bot has already connected to vc.
+    async def disconnect():
+        global voiceChannel
+        global readChannelID
+        global voiceChannelID
+        print("disconnect", readChannelID)
+        if readChannelID != 0:
+            channel = bot.get_channel(readChannelID)
+            await channel.send('おやすみ～')
+            await voiceChannel.disconnect()
+            voiceChannel = None
+            readChannelID = 0
+            voiceChannelID = 0
 
-# connect to vc. if bot has already connected to vc, bot disconnect from it.
-async def connect(message):
-    global voiceChannel
-    global readChannelID
-    await disconnect()
-    readChannelID = message.channel.id
-    voiceChannel = await VoiceChannel.connect(message.author.voice.channel)
-    print(readChannelID)
-    await message.channel.send('おはよ！')
+    # connect to vc. if bot has already connected to vc, bot disconnect from it.
+    async def connect(message):
+        global voiceChannel
+        global readChannelID
+        global voiceChannelID
+        await disconnect()
+        readChannelID = message.channel.id
+        voiceChannelID = message.author.voice.channel.id
+        voiceChannel = await VoiceChannel.connect(message.author.voice.channel)
+        print(readChannelID)
+        await message.channel.send('おはよ！')
 
-def is_connected():
-    global voiceChannel
-    return voiceChannel is not None
+    def is_connected():
+        global voiceChannel
+        return voiceChannel is not None
 
-def read_name(member):
-    return member.display_name
-    #if member.nick is None:
-    #    return member.name
-    #else:
-    #    return member.nick
+    def read_name(member):
+        return member.display_name
+        #if member.nick is None:
+        #    return member.name
+        #else:
+        #    return member.nick
 
-@bot.command()
-async def con(ctx):
-    await connect(ctx.message)
-    play_voice("おはようございます")
+    @bot.command()
+    async def con(ctx):
+        await connect(ctx.message)
+        play_voice("おはようございます")
 
-@bot.command()
-async def dc(ctx):
-    await disconnect()
+    @bot.command()
+    async def dc(ctx):
+        await disconnect()
 
 
-@bot.command()
-async def add(ctx, before, after):
-    global read_dict
-    read_dict[before] = after
-    save_dict()
-    voice_msg = make_read_text(f"{after}、覚えました")
-    play_voice(voice_msg)
+    @bot.command()
+    async def add(ctx, before, after):
+        global read_dict
+        read_dict[before] = after
+        save_dict()
+        voice_msg = make_read_text(f"{after}、覚えました")
+        play_voice(voice_msg)
 
-@bot.command()
-async def rem(ctx, before):
-    global read_dict
-    read_dict.pop(before)
-    save_dict()
-    voice_msg = make_read_text(f"これからは、{before}って読むね")
-    play_voice(voice_msg)
+    @bot.command()
+    async def rem(ctx, before):
+        global read_dict
+        read_dict.pop(before)
+        save_dict()
+        voice_msg = make_read_text(f"これからは、{before}って読むね")
+        play_voice(voice_msg)
 
-# >hel @user hello 
-@bot.command()
-async def hel(ctx,after):
-    global greeting_dict
-    user_id = str(ctx.author.id)
-    if user_id not in greeting_dict:
-        greeting_dict[user_id] = dict()
-    greeting_dict[user_id]['hello'] = after
-    save_greeting()
-    name = read_name(ctx.author)
-    print(ctx.author)
-    voice_msg = make_read_text(f"{name}さん、次会ったときは、{after}って言うね。")
-    play_voice(voice_msg)
+    # >hel @user hello 
+    @bot.command()
+    async def hel(ctx,after):
+        global greeting_dict
+        user_id = str(ctx.author.id)
+        if user_id not in greeting_dict:
+            greeting_dict[user_id] = dict()
+        greeting_dict[user_id]['hello'] = after
+        save_greeting()
+        name = read_name(ctx.author)
+        print(ctx.author)
+        voice_msg = make_read_text(f"{name}さん、次会ったときは、{after}って言うね。")
+        play_voice(voice_msg)
 
-@bot.command()
-async def bye(ctx,after):
-    global greeting_dict
-    user_id = str(ctx.author.id)
-    if user_id not in greeting_dict:
-        greeting_dict[user_id] = dict()
-    greeting_dict[user_id]['bye'] = after
-    save_greeting()
-    name = read_name(ctx.author)
-    voice_msg = make_read_text(f"{name}さん、部屋を出たときは、{after}と伝えるね。")
-    play_voice(voice_msg)
+    @bot.command()
+    async def bye(ctx,after):
+        global greeting_dict
+        user_id = str(ctx.author.id)
+        if user_id not in greeting_dict:
+            greeting_dict[user_id] = dict()
+        greeting_dict[user_id]['bye'] = after
+        save_greeting()
+        name = read_name(ctx.author)
+        voice_msg = make_read_text(f"{name}さん、部屋を出たときは、{after}と伝えるね。")
+        play_voice(voice_msg)
 
-@bot.listen()
-async def on_message(message):
-    global readChannelID
+    @bot.listen()
+    async def on_message(message):
+        global readChannelID
 
-    if message.author.bot or message.content.startswith(COMMAND_PREFIX):
-        return
+        if message.author.bot or message.content.startswith(COMMAND_PREFIX):
+            return
 
-    if is_connected() and message.channel.id == readChannelID:
-        name = read_name(message.author)
-        content = message.clean_content
-        print(content)
-        content = make_read_text(content)
-        if content != '':
-            voice_msg = f"{name} {content}"
+        if is_connected() and message.channel.id == readChannelID:
+            name = read_name(message.author)
+            content = message.clean_content
+            print(content)
+            content = make_read_text(content)
+            if content != '':
+                voice_msg = f"{name} {content}"
+                play_voice(voice_msg)
+
+    def is_connected_channel(channel):
+        global voiceChannel
+        if channel is None:
+            return False
+        elif channel.id == voiceChannel.channel.id:
+            return True
+        else:
+            return False
+
+    @bot.event
+    async def on_voice_state_update(member, before, after):
+        if is_connected() and after.channel is None and is_connected_channel(before.channel):
+            # check number of member
+            print(len(before.channel.members))
+            if len(before.channel.members) == 1:
+                # disconnect from connected channel
+                await disconnect()    
+        if is_connected() and before.channel is None and is_connected_channel(after.channel):
+            # connecting
+            name = read_name(member)
+            hello = greeting_dict.get(str(member.id),dict()).get('hello','こんにちは')
+            voice_msg = f"{name} {hello}"
+            play_voice(voice_msg)
+        if is_connected() and after.channel is None and is_connected_channel(before.channel):
+            # disconnecting
+            name = read_name(member)
+            bye = greeting_dict.get(str(member.id),dict()).get('bye','またねー')
+            voice_msg = f"{name} {bye}"
             play_voice(voice_msg)
 
-def is_connected_channel(channel):
-    global voiceChannel
-    if channel is None:
-        return False
-    elif channel.id == voiceChannel.channel.id:
-        return True
-    else:
-        return False
+    sleep_decl_pattern = re.compile(r"(\d+)時に")
 
-@bot.event
-async def on_voice_state_update(member, before, after):
-    if is_connected() and after.channel is None and is_connected_channel(before.channel):
-        # check number of member
-        print(len(before.channel.members))
-        if len(before.channel.members) == 1:
-            # disconnect from connected channel
-            await disconnect()    
-    if is_connected() and before.channel is None and is_connected_channel(after.channel):
-        # connecting
-        name = read_name(member)
-        hello = greeting_dict.get(str(member.id),dict()).get('hello','こんにちは')
-        voice_msg = f"{name} {hello}"
-        play_voice(voice_msg)
-    if is_connected() and after.channel is None and is_connected_channel(before.channel):
-        # disconnecting
-        name = read_name(member)
-        bye = greeting_dict.get(str(member.id),dict()).get('bye','またねー')
-        voice_msg = f"{name} {bye}"
-        play_voice(voice_msg)
-        
-sleep_decl_pattern = re.compile(r"(\d+)時に")
-
-def get_sleep_decl(nick):
-    if nick is not None:
-        m = sleep_decl_pattern.match(nick)
-        if m is not None:
-            h = int(m.group(1))
-            if h == 12:
-                h = 0
-            return h
+    def get_sleep_decl(nick):
+        if nick is not None:
+            m = sleep_decl_pattern.match(nick)
+            if m is not None:
+                h = int(m.group(1))
+                if h == 12:
+                    h = 0
+                return h
+            else:
+                None
         else:
-            None
-    else:
-        return None
+            return None
 
-@tasks.loop(seconds=60)
-async def check_sleep():
-    global voiceChannel
-    if not is_connected():
-        return
-    dt_now = datetime.datetime.now()
-    print(dt_now)
-    if dt_now.minute == 59 or dt_now.minute == 30:
-        hour = (dt_now.hour + 1) % 24
-        print(hour, "check")
-        for member in voiceChannel.channel.members:
-            decl_hour = get_sleep_decl(member.nick)
-            print(decl_hour, member.name)
-            print(decl_hour == hour)
-            # encourge
-            if decl_hour == (dt_now.hour + 1) % 24 and dt_now.minute == 59:
-                name = member.name
-                voice_msg = f"{name}さん ねないの"
-                play_voice(voice_msg)
-            if decl_hour == dt_now.hour and dt_now.minute == 30:
-                name = member.name
-                voice_msg = f"{name}さん ねてないじゃん！ ねようね"
-                play_voice(voice_msg)
+    @tasks.loop(seconds=60)
+    async def check_sleep():
+        global voiceChannel
+        if not is_connected():
+            return
+        dt_now = datetime.datetime.now()
+        print(dt_now)
+        if dt_now.minute == 59 or dt_now.minute == 30:
+            hour = (dt_now.hour + 1) % 24
+            print(hour, "check")
+            for member in voiceChannel.channel.members:
+                decl_hour = get_sleep_decl(member.nick)
+                print(decl_hour, member.name)
+                print(decl_hour == hour)
+                # encourge
+                if decl_hour == (dt_now.hour + 1) % 24 and dt_now.minute == 59:
+                    name = member.name
+                    voice_msg = f"{name}さん ねないの"
+                    play_voice(voice_msg)
+                if decl_hour == dt_now.hour and dt_now.minute == 30:
+                    name = member.name
+                    voice_msg = f"{name}さん ねてないじゃん！ ねようね"
+                    play_voice(voice_msg)
 
-@bot.event
-async def on_ready():
-    print('on_ready')
+    @bot.event
+    async def on_ready():
+        global voiceChannelID
+        global voiceChannel
+        print('on_ready')
+        if voiceChannelID != 0:
+            voice = bot.get_channel(voiceChannelID)
+            voiceChannel = await voice.connect(reconnect=False)
 
-check_sleep.start()
-bot.run(TOKEN)
+
+    try:
+        check_sleep.start()
+        bot.run(TOKEN, reconnect=False)
+        break
+    except KeyboardInterrupt:
+        break
+    except Exception as e:
+        print(e)
+        print("reconnect wait 5sec")
+        check_sleep.stop()
+        time.sleep(5)
