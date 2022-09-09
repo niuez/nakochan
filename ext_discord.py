@@ -105,8 +105,8 @@ def make_read_text(text):
 
 que = queue.Queue()
 
-def play_voice_worker():
-    while True:
+def play_voice_worker(fin_e):
+    while not fin_e.isSet():
         temp_file = que.get()
         print("play", temp_file.name)
         #voiceChannel.play(FFmpegPCMAudio(temp_file.name), after = lambda res: temp_file.close())
@@ -121,10 +121,12 @@ def play_voice_worker():
             print("ok")
             temp_file.close()
             os.remove(temp_file.name)
+        except Exception as e:
+            print(e)
         finally:
             que.task_done()
 
-threading.Thread(target=play_voice_worker, daemon=True).start()
+#threading.Thread(target=play_voice_worker, daemon=True).start()
 
 def create_voice(text, temp_file):
     voice_query_arg = {
@@ -334,7 +336,7 @@ while True:
                     name = member.name
                     voice_msg = f"{name}さん ねてないじゃん！ ねようね"
                     play_voice(voice_msg)
-
+        
     @bot.event
     async def on_ready():
         global voiceChannelID
@@ -343,15 +345,19 @@ while True:
         if voiceChannelID != 0:
             voice = bot.get_channel(voiceChannelID)
             voiceChannel = await voice.connect(reconnect=False)
-
-
+    
+    que = queue.Queue()
+    fin_event = Event()
+    thr = threading.Thread(target=play_voice_worker, daemon=True, args=(fin_event, ))
     try:
+        thr.start()
         check_sleep.start()
         bot.run(TOKEN, reconnect=False)
         break
     except KeyboardInterrupt:
         break
     except Exception as e:
+        fin_event.set()
         print(e)
         print("reconnect wait 5sec")
         check_sleep.stop()
